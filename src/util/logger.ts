@@ -4,18 +4,17 @@ const { combine, json, timestamp, colorize, align, printf, errors } =
 
 const logger = winston.createLogger({
   defaultMeta: {
-    service: "url-shortner",
+    service: "server-manager",
   },
   transports: [
     new winston.transports.Console({
       level: process.env.CONSOLE_LOG_LEVEL || "info",
       format: combine(
-        errors({ stackTrace: true }),
-        colorize({ all: true }),
-        json(),
         timestamp({
           format: "YYYY-MM-DD hh:mm:ss.SSS A", // 2026-01-22 03:23:10.350 PM
         }),
+        errors({ stackTrace: true }),
+        colorize({ all: true }),
         align(),
         printf(
           (info) => `[${info.level}] ${info.timestamp} => ${info.message}`,
@@ -26,11 +25,11 @@ const logger = winston.createLogger({
       filename: "file.log",
       level: process.env.FILE_LOG_LEVEL || "debug",
       format: combine(
-        errors({ stackTrace: true }),
-        json(),
         timestamp({
           format: "YYYY-MM-DD hh:mm:ss.SSS A", // 2026-01-22 03:23:10.350 PM
         }),
+        errors({ stackTrace: true }),
+        json(),
       ),
     }),
   ],

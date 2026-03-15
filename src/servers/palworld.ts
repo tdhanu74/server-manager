@@ -6,8 +6,8 @@ import winston from "winston";
 
 const { combine, json, timestamp, errors } = winston.format;
 
-class PalworldServer {
-  public constructor(entrypoint: string, maxlimit: number, name: string) {
+export default class PalworldServer {
+  public constructor(entrypoint: string, name: string) {
     this.id = uuidv4();
     this.name = name;
     this.entrypoint = entrypoint;
@@ -16,14 +16,14 @@ class PalworldServer {
     this.logger = winston.createLogger({
       transports: [
         new winston.transports.File({
-          filename: `palworld-${this.name}-${this.id}-${new Date()}.log`,
+          filename: `logs/palworld/${this.name}/${new Date().toISOString()}.log`,
           level: process.env.FILE_LOG_LEVEL || "debug",
           format: combine(
-            errors({ stackTrace: true }),
-            json(),
             timestamp({
               format: "YYYY-MM-DD hh:mm:ss.SSS A", // 2026-01-22 03:23:10.350 PM
             }),
+            errors({ stackTrace: true }),
+            json(),
           ),
         }),
       ],
@@ -57,6 +57,8 @@ class PalworldServer {
     }
   }
   stop() {
-    this.instance.kill("SIGINT");
+    if (this.running) {
+      this.instance.kill("SIGINT");
+    }
   }
 }

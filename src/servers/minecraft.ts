@@ -2,10 +2,11 @@ import { spawn } from "child_process";
 import { v4 as uuidv4 } from "uuid";
 import { AlreadyRunningError, NotRunningError } from "../errors";
 import winston from "winston";
+import * as path from "path";
 
 const { combine, json, timestamp, errors } = winston.format;
 
-class MinecraftServer {
+export default class MinecraftServer {
   public constructor(entrypoint: string, maxlimit: number, name: string) {
     this.id = uuidv4();
     this.name = name;
@@ -17,14 +18,14 @@ class MinecraftServer {
     this.logger = winston.createLogger({
       transports: [
         new winston.transports.File({
-          filename: `minecraft-${this.name}-${this.id}-${new Date()}.log`,
+          filename: `logs/minecraft/${this.name}/${new Date().toISOString()}.log`,
           level: process.env.FILE_LOG_LEVEL || "debug",
           format: combine(
-            errors({ stackTrace: true }),
-            json(),
             timestamp({
               format: "YYYY-MM-DD hh:mm:ss.SSS A", // 2026-01-22 03:23:10.350 PM
             }),
+            errors({ stackTrace: true }),
+            json(),
           ),
         }),
       ],
@@ -38,7 +39,7 @@ class MinecraftServer {
           [
             `-Xmx${this.maxlimit}G`,
             "-jar",
-            path.filename(this.entrypoint),
+            path.basename(this.entrypoint),
             "nogui",
           ],
           {
@@ -86,6 +87,8 @@ class MinecraftServer {
     }
   }
   stop() {
-    this.instance.stdin.write("stop\n");
+    if (this.running) {
+      this.instance.stdin.write("stop\n");
+    }
   }
 }
