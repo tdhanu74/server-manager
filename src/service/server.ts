@@ -23,6 +23,12 @@ export const servers = [
     maxlimit: 4,
     entrypoint: "/home/flip/minecraft/server.jar",
   },
+  {
+    name: "vh-local",
+    type: "minecraft",
+    maxlimit: 4,
+    entrypoint: "/home/flip/vault-hunter/run.sh",
+  },
 ] as Server[];
 
 servers?.map((server: Server) => {

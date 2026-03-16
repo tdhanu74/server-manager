@@ -47,7 +47,7 @@ export default class MinecraftServer {
           },
         );
       } else {
-        this.instance = spawn(path.filename(this.entrypoint), [], {
+        this.instance = spawn(`./${path.basename(this.entrypoint)}`, [], {
           cwd: path.dirname(this.entrypoint),
         });
       }
