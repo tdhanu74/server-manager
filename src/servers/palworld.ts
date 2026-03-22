@@ -1,6 +1,7 @@
 import { spawn } from "child_process";
 import { v4 as uuidv4 } from "uuid";
 import logger from "../util/logger";
+import SSE from "../util/event-emitter";
 import { AlreadyRunningError } from "../errors";
 import winston from "winston";
 import * as path from "path";
