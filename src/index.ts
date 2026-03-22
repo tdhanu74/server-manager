@@ -4,6 +4,7 @@ import { rateLimit } from "express-rate-limit";
 import logger from "./util/logger";
 import serverRoute from "./controller/server";
 import { servers, serverInstances } from "./service/server";
+import SSE from "./util/event-emitter";
 
 const app = express();
 const limiter = rateLimit({
@@ -28,19 +29,25 @@ app.use((req, res, next) => {
 
 app.use("/server", serverRoute);
 
+app.get("/events", (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+
+  req.on("close", () => {
+    res.end();
+  });
+
+  SSE.on("server-update", (server: Server) => {
+    res.write(`event: update\ndata: ${JSON.stringify({ ...server })}\n\n`);
+  });
+
+  SSE.on("server-log", (server) => {
+    res.write(`event: log\ndata: ${JSON.stringify({ ...server })}\n\n`);
+  });
+});
+
 const instance = app.listen(process.env.PORT, () => {
   logger.info("Starting on port:", process.env.PORT);
-});
-
-process.on("SIGINT", () => {
-  servers.forEach((server) => {
-    serverInstances[server.id].stop();
-  });
-  instance.close();
-});
-
-process.on("exit", () => {
-  servers.forEach((server) => {
-    serverInstances[server.id].stop();
-  });
 });

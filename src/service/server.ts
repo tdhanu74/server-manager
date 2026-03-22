@@ -86,3 +86,15 @@ export const stopServer = (id: str) => {
     .info(`Stopping server ${serverInstances[id].name} -> ${id}`);
   serverInstances[id].stop();
 };
+
+export const getServerLogs = (id: string): string[] => {
+  if (!Object.keys(serverInstances).includes(id)) {
+    throw new NotFoundError(`Server with id ${id} not found`);
+  }
+
+  const logs = serverInstances[id].getLogs();
+
+  logger.child({ id: id }).info(`Fetching Server ${id} Logs`);
+
+  return logs;
+};
