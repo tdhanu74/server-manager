@@ -10,7 +10,7 @@ import logger from "../util/logger";
 
 const serverRoute = express.Router();
 
-serverRoute.get("/", async (req, res) => {
+serverRoute.get("/", async (_req, res) => {
   try {
     const servers = getServers();
     res.status(200).send(servers);

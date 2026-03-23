@@ -1,22 +1,27 @@
 import { spawn } from "child_process";
 import { v4 as uuidv4 } from "uuid";
-import logger from "../util/logger";
 import SSE from "../util/event-emitter";
 import { AlreadyRunningError } from "../errors";
-import winston from "winston";
+import winston, { Logger } from "winston";
 import * as path from "path";
+import { ChildProcessWithoutNullStreams } from "child_process";
 
 const { combine, json, timestamp, errors } = winston.format;
 
 export default class PalworldServer {
+  id = "";
+  name = "";
+  logs: string[] = [];
+  entrypoint = "";
+  running = false;
+  instance: ChildProcessWithoutNullStreams | null = null;
+  logger: Logger | null;
+  logLocation = "";
+
   public constructor(entrypoint: string, name: string) {
     this.id = uuidv4();
     this.name = name;
-    this.logs = [];
     this.entrypoint = entrypoint;
-    this.running = false;
-    this.instance = null;
-    this.logLocation = null;
   }
   run() {
     if (!this.running) {
@@ -45,7 +50,7 @@ export default class PalworldServer {
 
       this.instance.stdout.setEncoding("utf-8");
       this.instance.stdout.on("data", (data) => {
-        this.logger.info(data);
+        this.logger?.info(data);
         this.logs.push(data);
         SSE.emit("server-log", {
           id: this.id,
@@ -55,10 +60,10 @@ export default class PalworldServer {
 
       this.instance.stderr.setEncoding("utf-8");
       this.instance.stderr.on("data", (error) => {
-        this.logger.error(error);
+        this.logger?.error(error);
       });
 
-      this.instance.on("exit", (code, signal) => {
+      this.instance.on("exit", (_code, _signal) => {
         this.running = false;
         SSE.emit("server-update", {
           id: this.id,
@@ -80,7 +85,7 @@ export default class PalworldServer {
   }
   stop() {
     if (this.running) {
-      this.instance.kill("SIGINT");
+      this.instance?.kill("SIGINT");
     }
   }
   getLogs() {

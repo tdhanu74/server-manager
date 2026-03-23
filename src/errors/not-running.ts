@@ -1,6 +1,6 @@
 export class NotRunningError extends Error {
-  constructor(message, code) {
+  code = "ERR_INSTANCE_NOT_RUNNING";
+  constructor(message: string) {
     super(message);
-    this.code = "ERR_INSTANCE_NOT_RUNNING";
   }
 }

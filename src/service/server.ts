@@ -44,7 +44,7 @@ export const getServers = (): Partial<Server>[] => {
       id: server.id,
       name: server.name,
       type: server.type,
-      running: serverInstances[server.id].running,
+      running: server?.id ? serverInstances[server.id].running : false,
     };
   });
 };
@@ -63,11 +63,11 @@ export const getServer = (id: string): Partial<Server> => {
     id: result.id,
     name: result.name,
     type: result.type,
-    running: serverInstances[result.id].running,
+    running: result?.id ? serverInstances[result.id].running : false,
   };
 };
 
-export const startServer = (id: str) => {
+export const startServer = (id: string) => {
   if (!Object.keys(serverInstances).includes(id)) {
     throw new NotFoundError(`Server with id ${id} not found`);
   }
@@ -77,7 +77,7 @@ export const startServer = (id: str) => {
   serverInstances[id].run();
 };
 
-export const stopServer = (id: str) => {
+export const stopServer = (id: string) => {
   if (!Object.keys(serverInstances).includes(id)) {
     throw new NotFoundError(`Server with id ${id} not found`);
   }

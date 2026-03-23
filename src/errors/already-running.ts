@@ -1,6 +1,6 @@
 export class AlreadyRunningError extends Error {
-  constructor(message, code) {
+  code = "ERR_INSTANCE_RUNNING";
+  constructor(message: string) {
     super(message);
-    this.code = "ERR_INSTANCE_RUNNING";
   }
 }
