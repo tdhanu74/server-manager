@@ -90,7 +90,7 @@ export default class PalworldServer {
   }
   stop() {
     if (this.running) {
-      this.instance?.kill();
+      this.instance?.kill("SIGINT");
     }
   }
   getLogs() {
