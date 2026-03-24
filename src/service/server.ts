@@ -2,8 +2,12 @@ import { builder } from "../servers/builder";
 import { Server } from "../types";
 import { NotFoundError } from "../errors";
 import logger from "../util/logger";
+import type MinecraftServer from "../servers/minecraft";
+import type PalworldServer from "../servers/palworld";
 
-export const serverInstances = {};
+export const serverInstances: {
+  [key: string]: MinecraftServer | PalworldServer;
+} = {};
 
 export const servers = [
   {

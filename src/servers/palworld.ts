@@ -15,7 +15,7 @@ export default class PalworldServer {
   entrypoint = "";
   running = false;
   instance: ChildProcessWithoutNullStreams | null = null;
-  logger: Logger | null;
+  logger: Logger | null = null;
   logLocation = "";
 
   public constructor(entrypoint: string, name: string) {
