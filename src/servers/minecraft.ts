@@ -1,4 +1,5 @@
 import { spawn } from "child_process";
+import { type Log } from "../types";
 import { v4 as uuidv4 } from "uuid";
 import { AlreadyRunningError, NotRunningError } from "../errors";
 import SSE from "../util/event-emitter";
@@ -11,7 +12,7 @@ const { combine, json, timestamp, errors } = winston.format;
 export default class MinecraftServer {
   id = "";
   name = "";
-  logs: string[] = [];
+  logs: Log[] = [];
   entrypoint = "";
   maxlimit = 0;
   allowInput = false;
@@ -68,10 +69,12 @@ export default class MinecraftServer {
 
       this.instance.stdout.setEncoding("utf-8");
       this.instance.stdout.on("data", (data: string) => {
+        const log_id = uuidv4();
         this.logger?.info(data);
-        this.logs.push(data);
+        this.logs.push({ id: log_id, log: data });
         SSE.emit("server-log", {
-          id: this.id,
+          id: log_id,
+          server_id: this.id,
           log: data,
         });
         if (data.includes('For help, type "help"')) {
@@ -89,7 +92,8 @@ export default class MinecraftServer {
         this.allowInput = false;
 
         SSE.emit("server-update", {
-          id: this.id,
+          id: uuidv4(),
+          server_id: this.id,
           running: false,
         });
       });
@@ -97,7 +101,8 @@ export default class MinecraftServer {
       this.running = true;
 
       SSE.emit("server-update", {
-        id: this.id,
+        id: uuidv4(),
+        server_id: this.id,
         running: true,
       });
     } else {

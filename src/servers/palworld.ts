@@ -1,5 +1,6 @@
 import { spawn } from "child_process";
 import { v4 as uuidv4 } from "uuid";
+import { type Log } from "../types";
 import SSE from "../util/event-emitter";
 import { AlreadyRunningError } from "../errors";
 import winston, { Logger } from "winston";
@@ -11,7 +12,7 @@ const { combine, json, timestamp, errors } = winston.format;
 export default class PalworldServer {
   id = "";
   name = "";
-  logs: string[] = [];
+  logs: Log[] = [];
   entrypoint = "";
   running = false;
   instance: ChildProcessWithoutNullStreams | null = null;
@@ -50,10 +51,12 @@ export default class PalworldServer {
 
       this.instance.stdout.setEncoding("utf-8");
       this.instance.stdout.on("data", (data) => {
+        const log_id = uuidv4();
         this.logger?.info(data);
-        this.logs.push(data);
+        this.logs.push({ id: log_id, log: data });
         SSE.emit("server-log", {
-          id: this.id,
+          id: uuidv4(),
+          server_id: this.id,
           log: data,
         });
       });
@@ -66,7 +69,8 @@ export default class PalworldServer {
       this.instance.on("exit", (_code, _signal) => {
         this.running = false;
         SSE.emit("server-update", {
-          id: this.id,
+          id: uuidv4(),
+          server_id: this.id,
           running: false,
         });
       });
@@ -74,7 +78,8 @@ export default class PalworldServer {
       this.running = true;
 
       SSE.emit("server-update", {
-        id: this.id,
+        id: uuidv4(),
+        server_id: this.id,
         running: true,
       });
     } else {

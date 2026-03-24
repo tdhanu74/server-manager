@@ -4,7 +4,6 @@ import { rateLimit } from "express-rate-limit";
 import logger from "./util/logger";
 import serverRoute from "./controller/server";
 import SSE from "./util/event-emitter";
-import { type Server } from "./types";
 
 const app = express();
 const limiter = rateLimit({
@@ -39,12 +38,16 @@ app.get("/events", (req, res) => {
     res.end();
   });
 
-  SSE.on("server-update", (server: Server) => {
-    res.write(`event: update\ndata: ${JSON.stringify({ ...server })}\n\n`);
+  SSE.on("server-update", (server) => {
+    res.write(
+      `id: ${server.id}\nevent: update\ndata: ${JSON.stringify({ id: server.server_id, running: server.running })}\n\n`,
+    );
   });
 
   SSE.on("server-log", (server) => {
-    res.write(`event: log\ndata: ${JSON.stringify({ ...server })}\n\n`);
+    res.write(
+      `id: ${server.id}\nevent: log\ndata: ${JSON.stringify({ id: server.server_id, log: server.log })}\n\n`,
+    );
   });
 });
 
