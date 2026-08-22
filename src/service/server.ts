@@ -1,104 +1,72 @@
-import { builder } from "../servers/builder";
-import { Server } from "../types";
-import { NotFoundError } from "../errors";
-import logger from "../util/logger";
-import type MinecraftServer from "../servers/minecraft";
-import type PalworldServer from "../servers/palworld";
+import { Server } from "@/types";
+import { NotFoundError } from "@/errors";
+import logger from "@/util/logger";
+import {
+  getServers,
+  getServer,
+  addServer,
+  getServerByName,
+} from "@/repository/server";
+import ServerDaemon from "@/servers/daemon";
+import { v4 as uuidv4 } from "uuid";
 
-export const serverInstances: {
-  [key: string]: MinecraftServer | PalworldServer;
-} = {};
+const daemon = ServerDaemon.instance;
 
-export const servers = [
-  {
-    name: "vault-hunter",
-    type: "minecraft",
-    maxlimit: 4,
-    entrypoint: "/home/whynot/minecraft-servers/vault-hunter/run.sh",
-  },
-  {
-    name: "palworld",
-    type: "palworld",
-    entrypoint: "/home/whynot/palworld-servers/retarded-pokemons/PalServer.sh",
-  },
-  {
-    name: "local",
-    type: "minecraft",
-    maxlimit: 4,
-    entrypoint: "/home/flip/minecraft/server.jar",
-  },
-  {
-    name: "vh-local",
-    type: "minecraft",
-    maxlimit: 4,
-    entrypoint: "/home/flip/vault-hunter/run.sh",
-  },
-] as Server[];
-
-servers?.map((server: Server) => {
-  const serverInstance = builder(server);
-  serverInstances[serverInstance.id] = serverInstance;
-  server.id = serverInstance.id;
-  server.running = serverInstance.running;
-});
-
-export const getServers = (): Partial<Server>[] => {
-  return servers.map((server: Server) => {
-    return {
-      id: server.id,
-      name: server.name,
-      type: server.type,
-      running: server?.id ? serverInstances[server.id].running : false,
-    };
-  });
+export const fetchServers = (): Partial<Server>[] => {
+  return getServers();
 };
 
-export const getServer = (id: string): Partial<Server> => {
-  const result = servers.filter((server: Server) => {
-    return server.id === id;
-  })[0];
+export const fetchServer = (id: string): Partial<Server> => {
+  const result = getServer(id);
   if (!result) {
     throw new NotFoundError(`Server with id ${id} not found`);
   }
 
   logger.child({ id: id }).info(`Resolving ${id} => Server ${result.name}`);
 
-  return {
-    id: result.id,
-    name: result.name,
-    type: result.type,
-    running: result?.id ? serverInstances[result.id].running : false,
-  };
+  return result;
+};
+
+export const createServer = (server: Partial<Server>) => {
+  let result = getServerByName(server.name ?? "");
+  if (!result) {
+    server.id = uuidv4();
+    result = addServer(server as Server);
+  } else {
+    logger
+      .child({ id: result.id })
+      .info(`Server ${server.name} already exists`);
+  }
+  return result;
 };
 
 export const startServer = (id: string) => {
-  if (!Object.keys(serverInstances).includes(id)) {
+  const result = getServer(id);
+  if (!result) {
     throw new NotFoundError(`Server with id ${id} not found`);
   }
-  logger
-    .child({ id: id })
-    .info(`Starting server ${serverInstances[id].name} -> ${id}`);
-  serverInstances[id].run();
+  logger.child({ id: id }).info(`Starting server ${result.name} -> ${id}`);
+  daemon.runServer(result);
 };
 
 export const stopServer = (id: string) => {
-  if (!Object.keys(serverInstances).includes(id)) {
+  const result = getServer(id);
+  if (!result) {
     throw new NotFoundError(`Server with id ${id} not found`);
   }
-  logger
-    .child({ id: id })
-    .info(`Stopping server ${serverInstances[id].name} -> ${id}`);
-  serverInstances[id].stop();
+  logger.child({ id: id }).info(`Starting server ${result.name} -> ${id}`);
+  daemon.stopServer(result);
 };
 
 export const getServerLogs = (id: string): string[] => {
-  if (!Object.keys(serverInstances).includes(id)) {
+  const result = getServer(id);
+  if (!result) {
     throw new NotFoundError(`Server with id ${id} not found`);
   }
 
-  const logs = serverInstances[id].getLogs();
+  const logs = daemon.getLogs(result);
 
   logger.child({ id: id }).info(`Fetching Server ${id} Logs`);
 
-  return logs;
+  return logs.map((log) => log.log);
 };

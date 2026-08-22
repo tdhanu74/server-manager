@@ -1,19 +1,43 @@
 import express from "express";
 import {
-  getServers,
-  getServer,
+  fetchServers,
+  fetchServer,
+  createServer,
   startServer,
   stopServer,
   getServerLogs,
-} from "../service/server";
-import logger from "../util/logger";
+} from "@/service/server";
+import { type Server } from "@/types";
+import logger from "@/util/logger";
+import { removeServer } from "@/repository/server";
 
 const serverRoute = express.Router();
 
 serverRoute.get("/", async (_req, res) => {
   try {
-    const servers = getServers();
+    const servers = fetchServers();
     res.status(200).send(servers);
+  } catch (e: any) {
+    logger.error(e);
+    res.status(500).send(e.message);
+  }
+});
+
+serverRoute.post("/", async (req, res) => {
+  try {
+    const server: Partial<Server> = req.body;
+    const result = createServer(server);
+    res.status(200).send(result);
+  } catch (e: any) {
+    logger.error(e);
+    res.status(500).send(e.message);
+  }
+});
+
+serverRoute.delete("/:id", async (req, res) => {
+  try {
+    const result = removeServer(req.params.id);
+    res.status(200).send(result);
   } catch (e: any) {
     logger.error(e);
     res.status(500).send(e.message);
@@ -22,7 +46,7 @@ serverRoute.get("/", async (_req, res) => {
 
 serverRoute.get("/:id", async (req, res) => {
   try {
-    const server = getServer(req.params.id);
+    const server = fetchServer(req.params.id);
     res.status(200).send(server);
   } catch (e: any) {
     logger.error(e);

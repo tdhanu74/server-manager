@@ -1,5 +1,5 @@
 export type Server = {
-  id?: string;
+  id: string;
   name: string;
   type: string;
   running?: boolean;

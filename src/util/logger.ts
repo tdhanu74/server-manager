@@ -9,6 +9,8 @@ const logger = winston.createLogger({
   transports: [
     new winston.transports.Console({
       level: process.env.CONSOLE_LOG_LEVEL || "info",
+      handleExceptions: true,
+      handleRejections: true,
       format: combine(
         timestamp({
           format: "YYYY-MM-DD hh:mm:ss.SSS A", // 2026-01-22 03:23:10.350 PM
@@ -17,13 +19,16 @@ const logger = winston.createLogger({
         colorize({ all: true }),
         align(),
         printf(
-          (info) => `[${info.level}] ${info.timestamp} => ${info.message}`,
+          (info) =>
+            `[${info.level}] ${info.timestamp} => ${info.stack || info.message}`,
         ),
       ),
     }),
     new winston.transports.File({
       filename: "file.log",
       level: process.env.FILE_LOG_LEVEL || "debug",
+      handleExceptions: true,
+      handleRejections: true,
       format: combine(
         timestamp({
           format: "YYYY-MM-DD hh:mm:ss.SSS A", // 2026-01-22 03:23:10.350 PM

@@ -1,9 +1,13 @@
 import "dotenv/config";
 import express from "express";
 import { rateLimit } from "express-rate-limit";
-import logger from "./util/logger";
-import serverRoute from "./controller/server";
-import SSE from "./util/event-emitter";
+import logger from "@/util/logger";
+import serverRoute from "@/controller/server";
+import SSE from "@/util/event-emitter";
+import db from "@/util/db/client";
+import { init } from "./util/db/init";
+
+init();
 
 const app = express();
 const limiter = rateLimit({
@@ -54,3 +58,9 @@ app.get("/events", (req, res) => {
 app.listen(process.env.PORT, () => {
   logger.info("Starting on port:", process.env.PORT);
 });
+
+function shutdown() {
+  db.close();
+}
+
+process.on("exit", shutdown);

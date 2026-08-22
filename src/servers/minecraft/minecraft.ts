@@ -1,35 +1,40 @@
 import { spawn } from "child_process";
-import { type Log } from "../types";
+import { type Log } from "@/types";
 import { v4 as uuidv4 } from "uuid";
-import { AlreadyRunningError, NotRunningError } from "../errors";
-import SSE from "../util/event-emitter";
+import { AlreadyRunningError, NotRunningError } from "@/errors";
+import SSE from "@/util/event-emitter";
 import winston, { type Logger } from "winston";
 import * as path from "path";
+import { ServerInstance } from "@/servers/base";
 import { ChildProcessWithoutNullStreams } from "child_process";
 
 const { combine, json, timestamp, errors } = winston.format;
 
-export default class MinecraftServer {
+export class MinecraftServer implements ServerInstance {
   id = "";
   name = "";
   logs: Log[] = [];
   entrypoint = "";
   maxlimit = 0;
-  allowInput = false;
   running = false;
-  instance: ChildProcessWithoutNullStreams | null = null;
+  instance!: ChildProcessWithoutNullStreams;
   logLocation: string = "";
-  logger: Logger | null = null;
+  logger!: Logger;
 
-  public constructor(entrypoint: string, maxlimit: number, name: string) {
-    this.id = uuidv4();
+  public constructor(
+    id: string,
+    entrypoint: string,
+    maxlimit: number,
+    name: string,
+  ) {
+    this.id = id;
     this.name = name;
     this.entrypoint = entrypoint;
     this.maxlimit = maxlimit;
   }
-  run() {
+  start() {
     if (!this.running) {
-      this.logLocation = `logs/minecraft/${this.name}/${new Date().toISOString()}.log`;
+      this.logLocation = `minecraft/${this.name}/logs/${new Date().toISOString()}.log`;
       this.logs = [];
 
       if (path.extname(this.entrypoint) === ".jar") {
@@ -77,9 +82,6 @@ export default class MinecraftServer {
           server_id: this.id,
           log: data,
         });
-        if (data.includes('For help, type "help"')) {
-          this.allowInput = true;
-        }
       });
 
       this.instance.stderr.setEncoding("utf-8");
@@ -89,7 +91,6 @@ export default class MinecraftServer {
 
       this.instance.on("exit", (_code, _signal) => {
         this.running = false;
-        this.allowInput = false;
 
         SSE.emit("server-update", {
           id: uuidv4(),

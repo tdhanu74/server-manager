@@ -1,32 +1,33 @@
 import { spawn } from "child_process";
 import { v4 as uuidv4 } from "uuid";
-import { type Log } from "../types";
-import SSE from "../util/event-emitter";
-import { AlreadyRunningError } from "../errors";
+import { type Log } from "@/types";
+import SSE from "@/util/event-emitter";
+import { AlreadyRunningError } from "@/errors";
 import winston, { Logger } from "winston";
 import * as path from "path";
 import { ChildProcessWithoutNullStreams } from "child_process";
+import { ServerInstance } from "@/servers/base";
 
 const { combine, json, timestamp, errors } = winston.format;
 
-export default class PalworldServer {
+export class PalworldServer implements ServerInstance {
   id = "";
   name = "";
   logs: Log[] = [];
   entrypoint = "";
   running = false;
-  instance: ChildProcessWithoutNullStreams | null = null;
-  logger: Logger | null = null;
+  instance!: ChildProcessWithoutNullStreams;
+  logger!: Logger;
   logLocation = "";
 
-  public constructor(entrypoint: string, name: string) {
-    this.id = uuidv4();
+  public constructor(id: string, entrypoint: string, name: string) {
+    this.id = id;
     this.name = name;
     this.entrypoint = entrypoint;
   }
-  run() {
+  start() {
     if (!this.running) {
-      this.logLocation = `logs/palworld/${this.name}/${new Date().toISOString()}.log`;
+      this.logLocation = `palworld/${this.name}/logs/${new Date().toISOString()}.log`;
       this.logs = [];
 
       this.instance = spawn(`./${path.basename(this.entrypoint)}`, {
